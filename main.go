@@ -32,9 +32,60 @@ type H5PayRequest struct {
 	Terminalid string `json:"terminalid" url:"terminalid"`                   //终端号
 	Version    string `json:"version" url:"version"`                         //版本号
 }
-
+var Domain string
 const signKey ="zsdfyreuoyamdphhaweyrjbvzkgfdycs"
-func main() {
+func main(){
+	filepath :=flag.String("f","example.conf","gen url by conf")
+	flag.Parse()
+
+	h5 :=encapConfigData(*filepath)
+	genUrl(h5)
+
+}
+func encapConfigData(path string) (h5 *H5PayRequest){
+	node:="h5"
+	c :=Config{}
+	c.InitConfig(path)
+	//for k,v:=range c.Mymap{
+	//	fmt.Printf("k:%s v:%s\n",k,v)
+	//}
+	h5 =&H5PayRequest{}
+	h5.OrderNum = strconv.Itoa(int(time.Now().UnixNano()))
+	h5.Attach = c.Read(node,"attach")
+	h5.BackUrl = c.Read(node,"backUrl")
+	h5.Busicd = c.Read(node,"busicd")
+	h5.Chcd = c.Read(node,"chcd")
+	h5.FrontUrl = c.Read(node,"frontUrl")
+	h5.GoodsInfo = c.Read(node,"goodsInfo")
+	h5.Mchntid = c.Read(node,"mchntid")
+	h5.Txamt = c.Read(node,"txamt")
+	h5.Terminalid = c.Read(node,"terminalid")
+	h5.Version = c.Read(node,"version")
+	theSignKey := c.Read(node,"signKey")
+	Domain = c.Read(node,"domain")
+	h5.Sign = signWithSha1(h5,theSignKey)
+	return
+
+}
+func genUrl(h5 *H5PayRequest){
+	bytes,_:=json.Marshal(h5)
+	fmt.Printf("json: ==>%s\n",bytes)
+	b64str := base64.StdEncoding.EncodeToString(bytes)
+	url :=Domain + "?data=" +b64str
+	fmt.Println(url+"\n")
+}
+func signWithSha1(s interface{},signKey string)string{
+	signBuffer,_ := Query(s)
+	signString:=signBuffer.String() + signKey
+	fmt.Printf("sign string==> %s\n",signString)
+	h:=sha1.New()
+	h.Write([]byte(signString))
+	signBytes:=h.Sum(nil)
+	//fmt.Printf("sign\n  %v\n\n",signBytes)
+	signString =fmt.Sprintf("%x",signBytes)
+	return signString
+}
+func main1() {
 	chcd :=flag.String("c","WXP","channel code")
 	env :=flag.String("e","test","local | test | product address")
 
@@ -61,17 +112,8 @@ func main() {
 
 	}
 
-	signBuffer,_ := Query(reqData)
-	//fmt.Printf("sign buffer\n %s\n\n",signBuffer)
-	signString:=signBuffer.String() + signKey
-	//fmt.Printf("sign string\n %s\n\n",signString)
-	h:=sha1.New()
-	h.Write([]byte(signString))
-	signBytes:=h.Sum(nil)
-	//fmt.Printf("sign\n  %v\n\n",signBytes)
-	signString =fmt.Sprintf("%x",signBytes)
-	//fmt.Printf("sign string res\n  %s\n\n",signString)
-	reqData.Sign = signString
+
+	reqData.Sign =signWithSha1(reqData,signKey)
 
 
 
