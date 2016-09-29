@@ -78,9 +78,10 @@ func signWithSha1(s interface{},signKey string)string{
 	signBuffer,_ := Query(s)
 	signString:=signBuffer.String() + signKey
 	fmt.Printf("sign string==> %s\n",signString)
-	h:=sha1.New()
-	h.Write([]byte(signString))
-	signBytes:=h.Sum(nil)
+	//h:=sha1.New()
+	//h.Write([]byte(signString))
+	//signBytes:=h.Sum(nil)
+	signBytes :=sha1.Sum([]byte(signString))
 	//fmt.Printf("sign\n  %v\n\n",signBytes)
 	signString =fmt.Sprintf("%x",signBytes)
 	return signString
