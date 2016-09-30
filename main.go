@@ -16,6 +16,7 @@ import (
 	"os"
 	"io"
 	"bufio"
+	"crypto/sha256"
 )
 
 type H5PayRequest struct {
@@ -63,7 +64,7 @@ func encapConfigData(path string) (h5 *H5PayRequest){
 	h5.Version = c.Read(node,"version")
 	theSignKey := c.Read(node,"signKey")
 	Domain = c.Read(node,"domain")
-	h5.Sign = signWithSha1(h5,theSignKey)
+	h5.Sign = signWithSha(h5,theSignKey)
 	return
 
 }
@@ -74,14 +75,20 @@ func genUrl(h5 *H5PayRequest){
 	url :=Domain + "?data=" +b64str
 	fmt.Println(url+"\n")
 }
-func signWithSha1(s interface{},signKey string)string{
+func signWithSha(s interface{},signKey string)string{
 	signBuffer,_ := Query(s)
 	signString:=signBuffer.String() + signKey
 	fmt.Printf("sign string==> %s\n",signString)
 	//h:=sha1.New()
 	//h.Write([]byte(signString))
 	//signBytes:=h.Sum(nil)
-	signBytes :=sha1.Sum([]byte(signString))
+	var signBytes []byte
+	if s.(H5PayRequest).Version == "2.0"{
+		signBytes =sha256.Sum256([]byte(signString))
+	}else{
+		signBytes =sha1.Sum([]byte(signString))
+	}
+
 	//fmt.Printf("sign\n  %v\n\n",signBytes)
 	signString =fmt.Sprintf("%x",signBytes)
 	return signString
