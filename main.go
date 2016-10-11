@@ -82,15 +82,13 @@ func signWithSha(s interface{},signKey string)string{
 	//h:=sha1.New()
 	//h.Write([]byte(signString))
 	//signBytes:=h.Sum(nil)
-	var signBytes []byte
-	if s.(H5PayRequest).Version == "2.0"{
-		signBytes =sha256.Sum256([]byte(signString))
+	if s.(*H5PayRequest).Version == "2.0"{
+		signString = fmt.Sprintf("%x",sha256.Sum256([]byte(signString)))
 	}else{
-		signBytes =sha1.Sum([]byte(signString))
+		signString = fmt.Sprintf("%x",sha1.Sum([]byte(signString)))
 	}
 
 	//fmt.Printf("sign\n  %v\n\n",signBytes)
-	signString =fmt.Sprintf("%x",signBytes)
 	return signString
 }
 func main1() {
@@ -121,7 +119,7 @@ func main1() {
 	}
 
 
-	reqData.Sign =signWithSha1(reqData,signKey)
+	reqData.Sign =signWithSha(reqData,signKey)
 
 
 
