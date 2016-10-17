@@ -1,148 +1,149 @@
 package main
 
 import (
-	"time"
-	"strconv"
-	"encoding/json"
-	"fmt"
-	"encoding/base64"
-	"sort"
-	"net/url"
-	"bytes"
-	"reflect"
-	"strings"
-	"crypto/sha1"
-	"flag"
-	"os"
-	"io"
 	"bufio"
+	"bytes"
+	"crypto/sha1"
 	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io"
+	"net/url"
+	"os"
+	"reflect"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type H5PayRequest struct {
-	Attach     string `json:"attach,omitempty" url:"attach,omitempty"`       //透传参数
-	Busicd     string `json:"busicd" url:"busicd"`                           //交易类型
-	BackUrl    string `json:"backUrl,omitempty" url:"backUrl,omitempty"`     //异步通知接收地址
-	Chcd       string `json:"chcd" url:"chcd"`                               //支付渠道代码   WXP:ALP
-	FrontUrl   string `json:"frontUrl" url:"frontUrl"`                       //支付成功或失败后跳转到的url
-	GoodsInfo  string `json:"goodsInfo,omitempty" url:"goodsInfo,omitempty"` //订单商品详情
-	Mchntid    string `json:"mchntid" url:"mchntid"`                         //商户号
-	OrderNum   string `json:"orderNum" url:"orderNum"`                       //订单号
-	Txamt      string `json:"txamt" url:"txamt"`                             //订单金额
-	Sign       string `json:"sign" url:"-"`                                  //签名
-	Terminalid string `json:"terminalid" url:"terminalid"`                   //终端号
-	Version    string `json:"version" url:"version"`                         //版本号
+	Attach      string `json:"attach,omitempty" url:"attach,omitempty"`       //透传参数
+	Busicd      string `json:"busicd" url:"busicd"`                           //交易类型
+	BackUrl     string `json:"backUrl,omitempty" url:"backUrl,omitempty"`     //异步通知接收地址
+	Chcd        string `json:"chcd" url:"chcd"`                               //支付渠道代码   WXP:ALP
+	FrontUrl    string `json:"frontUrl" url:"frontUrl"`                       //支付成功或失败后跳转到的url
+	GoodsInfo   string `json:"goodsInfo,omitempty" url:"goodsInfo,omitempty"` //订单商品详情
+	Mchntid     string `json:"mchntid" url:"mchntid"`                         //商户号
+	OrderNum    string `json:"orderNum" url:"orderNum"`                       //订单号
+	Txamt       string `json:"txamt" url:"txamt"`                             //订单金额
+	Sign        string `json:"sign" url:"-"`                                  //签名
+	Terminalid  string `json:"terminalid" url:"terminalid"`                   //终端号
+	Version     string `json:"version" url:"version"`                         //版本号
+	OutOrderNum string `json:"outOrderNum,omitempty" url:"outOrderNum,omitempty"`
+	SignType    string `json:"signType,omitempty" url:"signType,omitempty"`
+	Charset     string `json:"charset,omitempty" url:"charset,omitempty"`
 }
+
 var Domain string
-const signKey ="zsdfyreuoyamdphhaweyrjbvzkgfdycs"
-func main(){
-	filepath :=flag.String("f","example.conf","gen url by conf")
+
+const signKey = "zsdfyreuoyamdphhaweyrjbvzkgfdycs"
+
+func main() {
+	filepath := flag.String("f", "example.conf", "gen url by conf")
 	flag.Parse()
 
-	h5 :=encapConfigData(*filepath)
+	h5 := encapConfigData(*filepath)
 	genUrl(h5)
 
 }
-func encapConfigData(path string) (h5 *H5PayRequest){
-	node:="h5"
-	c :=Config{}
+func encapConfigData(path string) (h5 *H5PayRequest) {
+	node := "h5"
+	c := Config{}
 	c.InitConfig(path)
 	//for k,v:=range c.Mymap{
 	//	fmt.Printf("k:%s v:%s\n",k,v)
 	//}
-	h5 =&H5PayRequest{}
+	h5 = &H5PayRequest{}
 	h5.OrderNum = strconv.Itoa(int(time.Now().UnixNano()))
-	h5.Attach = c.Read(node,"attach")
-	h5.BackUrl = c.Read(node,"backUrl")
-	h5.Busicd = c.Read(node,"busicd")
-	h5.Chcd = c.Read(node,"chcd")
-	h5.FrontUrl = c.Read(node,"frontUrl")
-	h5.GoodsInfo = c.Read(node,"goodsInfo")
-	h5.Mchntid = c.Read(node,"mchntid")
-	h5.Txamt = c.Read(node,"txamt")
-	h5.Terminalid = c.Read(node,"terminalid")
-	h5.Version = c.Read(node,"version")
-	theSignKey := c.Read(node,"signKey")
-	Domain = c.Read(node,"domain")
-	h5.Sign = signWithSha(h5,theSignKey)
+	h5.Attach = c.Read(node, "attach")
+	h5.BackUrl = c.Read(node, "backUrl")
+	h5.Busicd = c.Read(node, "busicd")
+	h5.Chcd = c.Read(node, "chcd")
+	h5.FrontUrl = c.Read(node, "frontUrl")
+	h5.GoodsInfo = c.Read(node, "goodsInfo")
+	h5.Mchntid = c.Read(node, "mchntid")
+	h5.Txamt = c.Read(node, "txamt")
+	h5.Terminalid = c.Read(node, "terminalid")
+	h5.Version = c.Read(node, "version")
+	h5.Charset = c.Read(node, "charset")
+	h5.OutOrderNum = c.Read(node, "outOrderNum")
+	h5.SignType = c.Read(node, "signType")
+	theSignKey := c.Read(node, "signKey")
+	Domain = c.Read(node, "domain")
+	h5.Sign = signWithSha(h5, theSignKey)
 	return
 
 }
-func genUrl(h5 *H5PayRequest){
-	bytes,_:=json.Marshal(h5)
-	fmt.Printf("json: ==>%s\n",bytes)
+func genUrl(h5 *H5PayRequest) {
+	bytes, _ := json.Marshal(h5)
+	fmt.Printf("json: ==>%s\n", bytes)
 	b64str := base64.StdEncoding.EncodeToString(bytes)
-	url :=Domain + "?data=" +b64str
-	fmt.Println(url+"\n")
+	url := Domain + "?data=" + b64str
+	fmt.Println(url + "\n")
 }
-func signWithSha(s interface{},signKey string)string{
-	signBuffer,_ := Query(s)
-	signString:=signBuffer.String() + signKey
-	fmt.Printf("sign string==> %s\n",signString)
+func signWithSha(s interface{}, signKey string) string {
+	signBuffer, _ := Query(s)
+	signString := signBuffer.String() + signKey
+	fmt.Printf("sign string==> %s\n", signString)
 	//h:=sha1.New()
 	//h.Write([]byte(signString))
 	//signBytes:=h.Sum(nil)
-	if s.(*H5PayRequest).Version == "2.0"{
-		signString = fmt.Sprintf("%x",sha256.Sum256([]byte(signString)))
-	}else{
-		signString = fmt.Sprintf("%x",sha1.Sum([]byte(signString)))
+	if s.(*H5PayRequest).Version == "2.0" {
+		signString = fmt.Sprintf("%x", sha256.Sum256([]byte(signString)))
+	} else {
+		signString = fmt.Sprintf("%x", sha1.Sum([]byte(signString)))
 	}
 
 	//fmt.Printf("sign\n  %v\n\n",signBytes)
 	return signString
 }
 func main1() {
-	chcd :=flag.String("c","WXP","channel code")
-	env :=flag.String("e","test","local | test | product address")
+	chcd := flag.String("c", "WXP", "channel code")
+	env := flag.String("e", "test", "local | test | product address")
 
-	merid :=flag.String("m","000000000000012","merchant id")
+	merid := flag.String("m", "000000000000012", "merchant id")
 	flag.Parse()
-	cmd :=flag.Arg(0)
-	fmt.Printf("%s %s %s %s\n",*chcd,*merid,*env,cmd)
+	cmd := flag.Arg(0)
+	fmt.Printf("%s %s %s %s\n", *chcd, *merid, *env, cmd)
 
-
-
-	reqData :=&H5PayRequest{
-		Busicd:"WPAY",
-		BackUrl:"http://www.baidu.com",
-		Chcd:*chcd,
-		FrontUrl:"http://www.baidu.com",
+	reqData := &H5PayRequest{
+		Busicd:   "WPAY",
+		BackUrl:  "http://www.baidu.com",
+		Chcd:     *chcd,
+		FrontUrl: "http://www.baidu.com",
 		//Mchntid:"999118888881312",
 		//Mchntid:"100000000010001",
-		Mchntid:*merid,
-		OrderNum:strconv.Itoa(int(time.Now().UnixNano())),
-		Txamt:"000000000001",
-//		Txdir:"Q",
-		Terminalid:"00000001",
-		Version:"1.0",
-
+		Mchntid:  *merid,
+		OrderNum: strconv.Itoa(int(time.Now().UnixNano())),
+		Txamt:    "000000000001",
+		//		Txdir:"Q",
+		Terminalid: "00000001",
+		Version:    "1.0",
 	}
 
+	reqData.Sign = signWithSha(reqData, signKey)
 
-	reqData.Sign =signWithSha(reqData,signKey)
-
-
-
-
-
-	bytes,_:=json.Marshal(reqData)
-	fmt.Printf("json: ==>%s\n",bytes)
+	bytes, _ := json.Marshal(reqData)
+	fmt.Printf("json: ==>%s\n", bytes)
 	b64str := base64.StdEncoding.EncodeToString(bytes)
 	var url string
 	//fmt.Printf("encode ==>%s\n",b64str)
 	switch *env {
 	case "test":
-		url="http://test.quick.ipay.so/scanpay/unified?data=" + b64str
+		url = "http://test.quick.ipay.so/scanpay/unified?data=" + b64str
 	case "product":
-		url="http://showmoney.cn/scanpay/unified?data=" + b64str
+		url = "http://showmoney.cn/scanpay/unified?data=" + b64str
 	case "local":
-		url="http://10.30.1.195:6800/scanpay/unified?data=" + b64str
+		url = "http://10.30.1.195:6800/scanpay/unified?data=" + b64str
 
 	}
 	//url:="http://showmoney.cn/scanpay/unified?data=" + b64str
 	//url:="http://10.30.1.195:6800/scanpay/unified?data=" + b64str
 	//fmt.Sprintf(url,b64str)
-	fmt.Println(url+"\n")
+	fmt.Println(url + "\n")
 	//req,_:=http.NewRequest("GET",url,nil)
 	//client:=&http.Client{}
 	//response, _:=client.Do(req)
@@ -153,7 +154,6 @@ func main1() {
 	//fmt.Println(signWithSha1(url,""))
 
 }
-
 
 func Query(s interface{}, excludes ...string) (buf bytes.Buffer, err error) {
 	if s == nil {
@@ -209,12 +209,9 @@ func StringInSlice(a string, list []string) bool {
 	return false
 }
 
-
-
 var timeType = reflect.TypeOf(time.Time{})
 
 var encoderType = reflect.TypeOf(new(Encoder)).Elem()
-
 
 type Encoder interface {
 	EncodeValues(key string, v *url.Values) error
