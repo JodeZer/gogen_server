@@ -35,6 +35,7 @@ type H5PayRequest struct {
 	OutOrderNum string `json:"outOrderNum,omitempty" url:"outOrderNum,omitempty"`
 	SignType    string `json:"signType,omitempty" url:"signType,omitempty"`
 	Charset     string `json:"charset,omitempty" url:"charset,omitempty"`
+	GoodsList   string `json:"goodsList,omitempty" url:"goodsList,omitempty"`
 }
 
 var Domain string
@@ -71,6 +72,8 @@ func encapConfigData(path string) (h5 *H5PayRequest) {
 	h5.Charset = c.Read(node, "charset")
 	h5.OutOrderNum = c.Read(node, "outOrderNum")
 	h5.SignType = c.Read(node, "signType")
+	//h5.GoodsList = "11"
+	h5.GoodsList = `[{"goodsId":"iphone6s_32G","unifiedGoodsId":"1002","goodsName":"iPhone6s 32G","goodsNum":"1","price":"608800","goodsCategory":"123789","body":"苹果手机32G","showUrl":"www.cardinfolink.com"}]`
 	theSignKey := c.Read(node, "signKey")
 	Domain = c.Read(node, "domain")
 	h5.Sign = signWithSha(h5, theSignKey)
@@ -91,14 +94,16 @@ func signWithSha(s interface{}, signKey string) string {
 	//h:=sha1.New()
 	//h.Write([]byte(signString))
 	//signBytes:=h.Sum(nil)
+	var signString2 string
 	if s.(*H5PayRequest).Version == "2.0" {
-		signString = fmt.Sprintf("%x", sha256.Sum256([]byte(signString)))
+		signString2 = fmt.Sprintf("%x", sha256.Sum256([]byte(signString)))
 	} else {
-		signString = fmt.Sprintf("%x", sha1.Sum([]byte(signString)))
+		fmt.Printf("go sha1\n")
+		signString2 = fmt.Sprintf("%x", sha1.Sum([]byte(signString)))
 	}
 
-	//fmt.Printf("sign\n  %v\n\n",signBytes)
-	return signString
+	fmt.Printf("sign\n  %s\n\n", signString2)
+	return signString2
 }
 func main1() {
 	chcd := flag.String("c", "WXP", "channel code")
