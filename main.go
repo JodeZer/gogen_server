@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net/http"
 )
 
 type H5PayRequest struct {
@@ -43,11 +44,28 @@ var Domain string
 const signKey = "zsdfyreuoyamdphhaweyrjbvzkgfdycs"
 
 func main() {
-	filepath := flag.String("f", "example.conf", "gen url by conf")
-	flag.Parse()
 
-	h5 := encapConfigData(*filepath)
-	genUrl(h5)
+	http.HandleFunc("/front", func(w http.ResponseWriter, r*http.Request) {
+		fmt.Println(r.RequestURI)
+	})
+	http.HandleFunc("/back", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.RequestURI)
+	})
+	http.HandleFunc("/gen", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		array := r.Form["mer"]
+		if array != nil {
+			h5 := encapConfigData(array[0] + ".conf")
+			redurl := genUrl(h5)
+			fmt.Printf("%s\n", redurl)
+			http.Redirect(w, r, redurl, http.StatusFound)
+		}
+
+	})
+
+	if err := http.ListenAndServe(":10000", nil); err != nil {
+		fmt.Println("wrong err %s", err)
+	}
 
 }
 func encapConfigData(path string) (h5 *H5PayRequest) {
@@ -80,12 +98,12 @@ func encapConfigData(path string) (h5 *H5PayRequest) {
 	return
 
 }
-func genUrl(h5 *H5PayRequest) {
+func genUrl(h5 *H5PayRequest) string {
 	bytes, _ := json.Marshal(h5)
 	fmt.Printf("json: ==>%s\n", bytes)
 	b64str := base64.StdEncoding.EncodeToString(bytes)
 	url := Domain + "?data=" + b64str
-	fmt.Println(url + "\n")
+	return url
 }
 func signWithSha(s interface{}, signKey string) string {
 	signBuffer, _ := Query(s)
@@ -250,7 +268,8 @@ func reflectValue(values url.Values, val reflect.Value, scope string) error {
 	typ := val.Type()
 	for i := 0; i < typ.NumField(); i++ {
 		sf := typ.Field(i)
-		if sf.PkgPath != "" && !sf.Anonymous { // unexported
+		if sf.PkgPath != "" && !sf.Anonymous {
+			// unexported
 			continue
 		}
 
@@ -462,8 +481,8 @@ func (c *Config) InitConfig(path string) {
 
 		n1 := strings.Index(s, "[")
 		n2 := strings.LastIndex(s, "]")
-		if n1 > -1 && n2 > -1 && n2 > n1+1 {
-			c.strcet = strings.TrimSpace(s[n1+1 : n2])
+		if n1 > -1 && n2 > -1 && n2 > n1 + 1 {
+			c.strcet = strings.TrimSpace(s[n1 + 1 : n2])
 			continue
 		}
 
@@ -479,7 +498,7 @@ func (c *Config) InitConfig(path string) {
 		if len(frist) == 0 {
 			continue
 		}
-		second := strings.TrimSpace(s[index+1:])
+		second := strings.TrimSpace(s[index + 1:])
 
 		pos := strings.Index(second, "\t#")
 		if pos > -1 {
