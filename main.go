@@ -37,6 +37,7 @@ type H5PayRequest struct {
 	SignType    string `json:"signType,omitempty" url:"signType,omitempty"`
 	Charset     string `json:"charset,omitempty" url:"charset,omitempty"`
 	GoodsList   string `json:"goodsList,omitempty" url:"goodsList,omitempty"`
+	Subject     string `json:"subject,omitempty" url:"subject,omitempty"`  //订单标题
 }
 
 var Domain string
@@ -90,6 +91,7 @@ func encapConfigData(path string) (h5 *H5PayRequest) {
 	h5.Charset = c.Read(node, "charset")
 	h5.OutOrderNum = c.Read(node, "outOrderNum")
 	h5.SignType = c.Read(node, "signType")
+	h5.Subject = c.Read(node,"subject")
 	//h5.GoodsList = "11"
 	h5.GoodsList = `[{"goodsId":"iphone6s_32G","unifiedGoodsId":"1002","goodsName":"iPhone6s 32G","goodsNum":"1","price":"608800","goodsCategory":"123789","body":"苹果手机32G","showUrl":"www.cardinfolink.com"}]`
 	theSignKey := c.Read(node, "signKey")
