@@ -115,7 +115,7 @@ func signWithSha(s interface{}, signKey string) string {
 	//h.Write([]byte(signString))
 	//signBytes:=h.Sum(nil)
 	var signString2 string
-	if s.(*H5PayRequest).Version == "2.0" {
+	if s.(*H5PayRequest).Version == "2.0" || s.(*H5PayRequest).Version == "2.1"{
 		signString2 = fmt.Sprintf("%x", sha256.Sum256([]byte(signString)))
 	} else {
 		fmt.Printf("go sha1\n")
