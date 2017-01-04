@@ -40,8 +40,6 @@ type H5PayRequest struct {
 
 var Domain string
 
-const signKey = "zsdfyreuoyamdphhaweyrjbvzkgfdycs"
-
 func main() {
 	filepath := flag.String("f", "example.conf", "gen url by conf")
 	flag.Parse()
