@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"reflect"
@@ -17,7 +18,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"net/http"
 )
 
 type H5PayRequest struct {
@@ -37,16 +37,14 @@ type H5PayRequest struct {
 	SignType    string `json:"signType,omitempty" url:"signType,omitempty"`
 	Charset     string `json:"charset,omitempty" url:"charset,omitempty"`
 	GoodsList   string `json:"goodsList,omitempty" url:"goodsList,omitempty"`
-	Subject     string `json:"subject,omitempty" url:"subject,omitempty"`  //订单标题
+	Subject     string `json:"subject,omitempty" url:"subject,omitempty"` //订单标题
 }
 
 var Domain string
 
-const signKey = "zsdfyreuoyamdphhaweyrjbvzkgfdycs"
-
 func main() {
 
-	http.HandleFunc("/front", func(w http.ResponseWriter, r*http.Request) {
+	http.HandleFunc("/front", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.RequestURI)
 	})
 	http.HandleFunc("/back", func(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +89,7 @@ func encapConfigData(path string) (h5 *H5PayRequest) {
 	h5.Charset = c.Read(node, "charset")
 	h5.OutOrderNum = c.Read(node, "outOrderNum")
 	h5.SignType = c.Read(node, "signType")
-	h5.Subject = c.Read(node,"subject")
+	h5.Subject = c.Read(node, "subject")
 	//h5.GoodsList = "11"
 	h5.GoodsList = `[{"goodsId":"iphone6s_32G","unifiedGoodsId":"1002","goodsName":"iPhone6s 32G","goodsNum":"1","price":"608800","goodsCategory":"123789","body":"苹果手机32G","showUrl":"www.cardinfolink.com"}]`
 	theSignKey := c.Read(node, "signKey")
@@ -115,7 +113,7 @@ func signWithSha(s interface{}, signKey string) string {
 	//h.Write([]byte(signString))
 	//signBytes:=h.Sum(nil)
 	var signString2 string
-	if s.(*H5PayRequest).Version == "2.0" || s.(*H5PayRequest).Version == "2.1"{
+	if s.(*H5PayRequest).Version == "2.0" || s.(*H5PayRequest).Version == "2.1" {
 		signString2 = fmt.Sprintf("%x", sha256.Sum256([]byte(signString)))
 	} else {
 		fmt.Printf("go sha1\n")
@@ -483,8 +481,8 @@ func (c *Config) InitConfig(path string) {
 
 		n1 := strings.Index(s, "[")
 		n2 := strings.LastIndex(s, "]")
-		if n1 > -1 && n2 > -1 && n2 > n1 + 1 {
-			c.strcet = strings.TrimSpace(s[n1 + 1 : n2])
+		if n1 > -1 && n2 > -1 && n2 > n1+1 {
+			c.strcet = strings.TrimSpace(s[n1+1 : n2])
 			continue
 		}
 
@@ -500,7 +498,7 @@ func (c *Config) InitConfig(path string) {
 		if len(frist) == 0 {
 			continue
 		}
-		second := strings.TrimSpace(s[index + 1:])
+		second := strings.TrimSpace(s[index+1:])
 
 		pos := strings.Index(second, "\t#")
 		if pos > -1 {
